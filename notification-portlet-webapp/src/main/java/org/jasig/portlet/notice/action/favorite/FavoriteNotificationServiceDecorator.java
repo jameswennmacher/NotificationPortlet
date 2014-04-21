@@ -17,9 +17,10 @@
  * under the License.
  */
 
-package org.jasig.portlet.notice.action.hide;
+package org.jasig.portlet.notice.action.favorite;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -27,6 +28,7 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.EventRequest;
 import javax.portlet.EventResponse;
+import javax.portlet.PortletPreferences;
 import javax.portlet.PortletRequest;
 
 import org.apache.commons.lang.StringUtils;
@@ -39,16 +41,16 @@ import org.jasig.portlet.notice.NotificationEntry;
 import org.jasig.portlet.notice.NotificationResponse;
 
 /**
- * This class can be used to add a "hide" or "snooze" feature to notifications 
+ * This class can be used to add a "favorite" or "snooze" feature to notifications 
  * that have an id attribute.  By default, notices will be hidden for 365 days 
  * (effectively permanent).
  * 
- * @author awills
+ * @author James Wennmacher jwennmacher@unicon.net
  */
-public class HideNotificationServiceDecorator implements INotificationService {
+public class FavoriteNotificationServiceDecorator implements INotificationService {
 
-    public static final String HIDE_DURATION_HOURS_PREFERENCE = "HideNotificationServiceDecorator.hideDurationHours";
-    public static final Integer DEFAULT_HIDE_DURATION = -1;  // The feature is disabled by default
+    public static final String FAVORITE_ENABLED_PREFERENCE = "FavoriteNotificationServiceDecorator.enabled";
+    public static final String DEFAULT_FAVORITE_BEHAVIOR = "false";  // The feature is disabled by default
 
     // Instance members
     private INotificationService enclosedNotificationService;
@@ -77,61 +79,63 @@ public class HideNotificationServiceDecorator implements INotificationService {
     public NotificationResponse fetch(PortletRequest req) {
 
         // Just pass through the enclosed collection if this feature is disabled
-        if (HideAction.INSTANCE.calculateHideDurationMillis(req) < 0) {
+        if (!favoritesEnabled(req)) {
             return enclosedNotificationService.fetch(req);
         }
 
-        /*
-         * We will build a fresh NotificationResponse based on a deep-copy of the one we enclose
-         * 
-         * NB:  TBH I'm not certain this deep-clone thing is a good idea at all;  need to see how it plays out.  ~drew
-         */
+        // Build a fresh NotificationResponse based on a deep-copy of the one we enclose
         final NotificationResponse sourceResponse = enclosedNotificationService.fetch(req);
         NotificationResponse rslt = sourceResponse.cloneIfNotCloned();
 
-        final Set<String> currentlyHiddenNotificationIds = HideAction.INSTANCE.getHiddenNoticesMap(req).keySet();
+        final Set<String> favoriteNotificationIds = FavoriteAction.FAVORITE.getFavoriteNotices(req);
+        Set<String> potentiallyMissingIds = new HashSet<String>(favoriteNotificationIds);
 
-        // Add and implement the hide behavior with our copy
+        // Add and implement the favorite behavior with our copy
         for (NotificationCategory category : rslt.getCategories()) {
-
-            // We have to track if any were removed, and which ones remain
-            final List<NotificationEntry> entriesAfterHiding = new ArrayList<NotificationEntry>(category.getEntries());
 
             for (NotificationEntry entry : category.getEntries()) {
 
                 final List<NotificationAction> currentList = entry.getAvailableActions();
 
                 /*
-                 * There are 2 requirements for an entry to be decorated with Hide behavior:
+                 * There are 2 requirements for an entry to be decorated with Favorite behavior:
                  * 
                  *   - (1) It must have an id set
-                 *   - (2) It must not have a HideAction already
+                 *   - (2) It must not have a FavoriteAction already
                  */
-                if (StringUtils.isNotBlank(entry.getId()) && !currentList.contains(HideAction.INSTANCE)) {
-                    final List<NotificationAction> replacementList = new ArrayList<NotificationAction>(currentList);
-                    replacementList.add(new HideAction());
-                    entry.setAvailableActions(replacementList); // Also sets HideAction.targetEntity
-                }
-
-                /*
-                 * And 2 requirements for an entry to be removed based on it:
-                 * 
-                 *   - (1) It must be hidden by the user
-                 *   - (2) We must not be in "display hidden notices" mode (TODO:  Implement!)
-                 */
-                if (StringUtils.isNotBlank(entry.getId()) && currentlyHiddenNotificationIds.contains(entry.getId())) {
-                    entriesAfterHiding.remove(entry);
+                if (StringUtils.isNotBlank(entry.getId())) {
+                    // If the id is in the favorites list, set favorite=true and remove the ID from the potentially
+                    // missing set.
+                    if (favoriteNotificationIds.contains(entry.getId())) {
+                        entry.setFavorite(true);
+                        potentiallyMissingIds.remove(entry.getId());
+                    }
+                    if (!currentList.contains(FavoriteAction.FAVORITE)) {
+                        final List<NotificationAction> replacementList = new ArrayList<NotificationAction>(currentList);
+                        replacementList.add(!entry.isFavorite() ?
+                                FavoriteAction.createFavoriteInstance() : FavoriteAction.createUnfavoriteInstance());
+                        entry.setAvailableActions(replacementList);
+                    }
                 }
             }
-
-            if (category.getEntries().size() != entriesAfterHiding.size()) {
-                category.setEntries(entriesAfterHiding);
-            }
-
         }
 
+        // If there were no errors from the sources and there were favorite IDs that were not in the results, remove
+        // them so we don't have them build up over time if the user doesn't un-favorite an item that goes away.
+        if (rslt.getErrors().isEmpty() && potentiallyMissingIds.size() > 0) {
+            if (log.isDebugEnabled()) {
+                log.debug("Removing " + potentiallyMissingIds.size() + " unreferenced favorites for user "
+                        + req.getRemoteUser());
+            }
+            FavoriteAction.FAVORITE.removeFavoriteNotices(req, potentiallyMissingIds);
+        }
         return rslt;
 
+    }
+
+    private boolean favoritesEnabled(PortletRequest request) {
+        PortletPreferences prefs = request.getPreferences();
+        return Boolean.valueOf(prefs.getValue(FAVORITE_ENABLED_PREFERENCE, DEFAULT_FAVORITE_BEHAVIOR));
     }
 
     @Override

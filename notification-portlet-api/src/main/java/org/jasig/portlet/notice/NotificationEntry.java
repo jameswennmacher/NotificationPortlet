@@ -28,6 +28,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 
@@ -59,6 +60,7 @@ public class NotificationEntry implements Serializable, Cloneable {
     private Date      dueDate;
     private String    image;
     private String    body;
+    private boolean   favorite;
 
     /*
      * Weakly-typed, open-ended attributes collection
@@ -153,10 +155,12 @@ public class NotificationEntry implements Serializable, Cloneable {
         this.body = body;
     }
 
+    @JsonSerialize(using=JsonAttributesSerializer.class)
     public List<NotificationAttribute> getAttributes() {
         return Collections.unmodifiableList(attributes);
     }
 
+    @JsonDeserialize(using=JsonAttributesDeserializer.class)
     public void setAttributes(List<NotificationAttribute> attributes) {
         this.attributes = new ArrayList<NotificationAttribute>(attributes);  // defensive copy
     }
@@ -173,6 +177,14 @@ public class NotificationEntry implements Serializable, Cloneable {
             action.setTarget(this);
             this.availableActions.add(action);
         }
+    }
+
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
     }
 
     /**
@@ -205,27 +217,7 @@ public class NotificationEntry implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("NotificationEntry [source=");
-        builder.append(source);
-        builder.append(", title=");
-        builder.append(title);
-        builder.append(", url=");
-        builder.append(url);
-        builder.append(", linkText=");
-        builder.append(linkText);
-        builder.append(", priority=");
-        builder.append(priority);
-        builder.append(", dueDate=");
-        builder.append(dueDate);
-        builder.append(", image=");
-        builder.append(image);
-        builder.append(", body=");
-        builder.append(body);
-        builder.append(", attributes=");
-        builder.append(attributes);
-        builder.append("]");
-        return builder.toString();
+        return ToStringBuilder.reflectionToString(this);
     }
 
 }
