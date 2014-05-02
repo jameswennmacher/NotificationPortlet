@@ -20,12 +20,11 @@
 --%>
 
 <jsp:directive.include file="/WEB-INF/jsp/include.jsp"/>
+<%@taglib prefix="joda" uri="http://www.joda.org/joda/time/tags" %>
+<%@taglib prefix="date" uri="http://org.jasig.portlet/NotificationPortlet/date" %>
 
 <c:set var="n"><portlet:namespace/></c:set>
 
-<%--
-
---%>
 <portlet:actionURL var="invokeNotificationServiceUrl" escapeXml="false">
     <portlet:param name="uuid" value="${uuid}"/>
     <portlet:param name="action" value="invokeNotificationService"/>
@@ -43,6 +42,7 @@
 
 <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 
+<link rel="stylesheet" href="<rs:resourceURL value='/rs/bootstrap-namespaced/3.1.1/css/bootstrap.min.css'/>" type="text/css" />
 <link rel="stylesheet" href="<c:url value="/styles/job-postings.css"/>" type="text/css"></link>
 <!--[if lt IE 10]>
 <style>
@@ -53,6 +53,30 @@
 </style>
 <![endif]-->
 
+<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+
+<script type="text/javascript">
+    // Bootstrap javascript fails if included multiple times on a page.
+    // uPortal Bootstrap best practice: include bootstrap if and only if it is not present and save it to
+    // portlets object. Bootstrap functions could be manually invoked via portlets.bootstrapjQuery variable.
+    // All portlets using Bootstrap Javascript must use this approach.  Portlet's jQuery should be included
+    // prior to this code block.
+
+    var portlets = portlets || {};
+    // If bootstrap is not present at uPortal jQuery nor a community bootstrap, dynamically load it.
+    up.jQuery().carousel || portlets.bootstrapjQuery || document.write('<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"><\/script>');
+
+</script>
+<script type="text/javascript">
+    // Must be in separate script tag to insure bootstrap was dynamically loaded.
+    portlets["${n}"] = {};
+    portlets["${n}"].jQuery = jQuery.noConflict(true);
+    // If bootstrap JS global variable was not defined, set it to the jQuery that has bootstrap attached to.
+    portlets.bootstrapjQuery = portlets.bootstrapjQuery || (up.jQuery().carousel ? up.jQuery : portlets["${n}"].jQuery);
+</script>
+<script src='<c:url value="/scripts/job-postings.js"/>'></script>
 
 <div class="job-postings bootstrap-styles">
     <div id="loading" class="container-fluid">
@@ -96,20 +120,6 @@
         </nav>
 
         <div class="container-fluid" style="margin-top: 10px">
-            <%--
-            <!-- Button trigger modal -->
-            <div class="row">
-                <button class="btn btn-primary btn-xs" data-toggle="modal" data-target="#jobDetailsModal">
-                  Launch demo modal
-                </button>
-                <button class="btn btn-primary btn-xs" data-toggle="modal" data-target="#jobDetailsModal">
-                  Launch demo modal again
-                </button>
-                <button class="btn btn-primary btn-xs" id="isFiltered">
-                  Clear Filter
-                </button>
-            </div>
-            --%>
             <div class="row">
                 <div class="searchControls search-form col-md-5">
                     <h3>Search</h3>
@@ -122,10 +132,10 @@
                         <label for="searchDates" class="sr-only">Date Range:</label>
                         <select class="form-control input-sm" id="date-range">
                             <option value="">All</option>
-                            <option value="03/27/2014">Past Week</option>
-                            <option value="03/03/2014">Past Month</option>
-                            <option value="10/03/2013">Past 6 Months</option>
-                            <option value="04/03/2013">Past Year</option>
+                            <option value="${date:todayMinusDays(7, 'MM/dd/yyyy')}">Past Week</option>
+                            <option value="${date:todayMinusMonths(1, 'MM/dd/yyyy')}">Past Month</option>
+                            <option value="${date:todayMinusMonths(6, 'MM/dd/yyyy')}">Past 6 Months</option>
+                            <option value="${date:todayMinusMonths(12, 'MM/dd/yyyy')}">Past Year</option>
                         </select>
                       </div>
                       <button type="button" class="btn btn-primary btn-sm" id="searchButton">Search</button>
@@ -188,17 +198,6 @@
         <div class="modal fade job-details" id="jobDetailsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-lg">
             <div class="modal-content">
-              <%-- <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">{{job-title}}</h4>
-              </div>
-              <div class="modal-body">
-                place job description here...
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-              </div> --%>
             </div>
           </div>
         </div>
@@ -259,7 +258,7 @@
                     <div class="col-md-12">
                         <h5>{{=attributes.status}}</h5>
                         <h5>Date Posted: {{=attributes.postDate}}</h5>
-                        <h5>Job ID: {{=attributes.postDate}}</h5>
+                        <h5>Job ID: {{=id}}</h5>
                     </div>
                 </div>
                 <hr />
@@ -269,6 +268,10 @@
                 <div class="row">
                     <div class="col-md-5">Openings:</div>
                     <div class="col-md-7">{{=attributes.openings}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-5">Department:</div>
+                    <div class="col-md-7">{{=attributes.department}}</div>
                 </div>
                 <div class="row">
                     <div class="col-md-5">Location:</div>
@@ -284,7 +287,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-5">Hourly Wage:</div>
-                    <div class="col-md-7">{{=attributes.wage}}</div>
+                    <div class="col-md-7">{{=attributes.hourlyWage}}</div>
                 </div>
                 <div class="row">
                     <div class="col-md-12 closingDate">Closing Date: {{=attributes.dateClosed}}</div>
@@ -314,11 +317,6 @@
 </div>
 </script>
 
-<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-<script src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
-
 <script type="text/javascript">
     var jp_ = _.noConflict();
 
@@ -342,22 +340,7 @@
       escape      : /\{\{-([\s\S]+?)\}\}/g
     };
 
-</script>
-
-
-
-<script type="text/javascript">
     $(document).ready(function() {
-        jobPostings.init(urls);
+        jobPostings.init(portlets.bootstrapjQuery, jp_, urls);
     });
-
-
-// var template = jp_.template("Hello {{ name }}!");
-
-// console.log(template({name: "Mustache"}));
-// 
-//jp_.template($("#jobDescriptionModal").html())
-
 </script>
-
-<script src="<c:url value="/scripts/job-postings.js"/>"></script>

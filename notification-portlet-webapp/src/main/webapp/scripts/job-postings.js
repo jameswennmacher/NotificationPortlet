@@ -65,10 +65,10 @@ var jobPostings = function(){
     // private variables *******
     var settings = {
         urls: {},
-        emailFriend: true
+        emailFriend: false
     };
 
-    var oTable,_;
+    var oTable, _,$;
 
     // private functions
     var privateFunc = function() {};
@@ -168,18 +168,13 @@ var jobPostings = function(){
             function( oSettings, aData, iDataIndex ) {
 
                 var min = document.getElementById('date-range').value;
-                var origMin = min;
-                var max = today();
-
-                var iStartDateCol = 3;
-                var iEndDateCol = 3;
-
                 if (min === '' ) {
                     return true;
                 }
-
                 min = Date.parse(min);
-                max = Date.parse(max);
+
+                var iStartDateCol = 3;
+                var iEndDateCol = 3;
 
                 var colDate = Date.parse(aData[iStartDateCol]);
 
@@ -417,7 +412,7 @@ var jobPostings = function(){
                     "sWidth": "30%",
                     "mData": "title",
                     "mRender": function( data, type, full ) {
-                        return '<a href="' + full.id + '" title="View job details" class="jobDetailsLink" >' + data + '</a>';
+                        return '<a href="' + full.id + '" title="' + full.linkText + '" class="jobDetailsLink" >' + data + '</a>';
                     }
                 },
                 {
@@ -526,8 +521,9 @@ var jobPostings = function(){
 
     // public API *******
     return {
-        init: function (args) {
-            _ = jp_;
+        init: function (myjQuery, myUnderscore, args) {
+            _ = myUnderscore;
+            $ = myjQuery;
             if (args) {
                 settings.urls = args;
                 handshake();
