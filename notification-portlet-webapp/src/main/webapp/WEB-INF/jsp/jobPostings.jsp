@@ -131,14 +131,21 @@
                       <div class="form-group">
                         <label for="searchDates" class="sr-only">Date Range:</label>
                         <select class="form-control input-sm" id="date-range">
-                            <option value="">All</option>
+                            <option value="">Show All Dates</option>
                             <option value="${date:todayMinusDays(7, 'MM/dd/yyyy')}">Past Week</option>
                             <option value="${date:todayMinusMonths(1, 'MM/dd/yyyy')}">Past Month</option>
                             <option value="${date:todayMinusMonths(6, 'MM/dd/yyyy')}">Past 6 Months</option>
                             <option value="${date:todayMinusMonths(12, 'MM/dd/yyyy')}">Past Year</option>
                         </select>
                       </div>
+                      <div class="form-group">
+                        <label for="hiringCenters" class="sr-only">Hiring Center:</label>
+                        <select class="hiring-center form-control input-sm" id="hiringCenters">
+                        </select>
+                      </div>
+                      <%--
                       <button type="button" class="btn btn-primary btn-sm" id="searchButton">Search</button>
+                      --%>
                     </form>
                 </div>
     <%--            <div class="search-separator col-md-1">- or -</div>--%>
@@ -148,24 +155,19 @@
                     <form role="form">
                         <div class="row">
                             <div class="col-md-12">
-                                <ul>
-                                    <li class="checkbox"><label><input type="checkbox" value="Academic">Academic</label></li>
-                                    <li class="checkbox"><label><input type="checkbox" value="Clerical">Clerical</label></li>
-                                    <li class="checkbox"><label><input type="checkbox" value="Computer">Computer</label></li>
-                                    <li class="checkbox"><label><input type="checkbox" value="Event/Program/Project">Event/Program/Project</label></li>
-                                    <li class="checkbox"><label><input type="checkbox" value="MTC">MTC</label></li>
-                                    <li class="checkbox"><label><input type="checkbox" value="Miscellaneous">Miscellaneous</label></li>
-                                </ul>
+                                <ul id="filter-categories"></ul>
                             </div>
                         </div>
+                        <%--
                         <div class="row"><div class="col-md-12"><button type="submit" class="btn btn-primary btn-sm" id="filterButton">Filter</button></div></div>
+                        --%>
                     </form>
                 </div>
             </div>
 
-            <div class="row mine">
+            <div class="row">
                 <div class="col-sm-12">
-                    <!-- <label><input type="checkbox" id="toggle-checkbox"> Hide 'apply in person' jobs</label> -->
+                    <%-- <label><input type="checkbox" id="toggle-checkbox"> Hide 'apply in person' jobs</label> --%>
                     <div class="table-responsive">
                         <table class="jobs-table table table-striped table-bordered" id="jobPostings">
                             <thead>
@@ -203,6 +205,24 @@
         </div>
     </div>
 </div> <!-- bootstrap-styles -->
+<script type="text/template" id="tmpl_hiringCenters">
+    <option value="" default>Show All Hiring Centers</div>
+    {{
+        for (i=0;i<offices.length;i++) {
+    }}
+
+        <option value="{{=offices[i]}}">{{=offices[i]}}</option>
+    {{
+        };
+    }}
+    
+</script>
+<script type="text/template" id="tmpl_categories">
+    {{ for (i=0;i<categories.length;i++) { }}
+        <li class="checkbox"><label><input type="checkbox" value="{{= categories[i] }}">{{= categories[i] }}</label></li>
+    {{ } }}
+
+</script>
 
 <script type="text/template" id="jobDescriptionModal">
 {{ if (emailFriend) { }}
