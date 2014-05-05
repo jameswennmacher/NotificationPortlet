@@ -21,52 +21,35 @@ function today() {
 
 
 
-
-$(document).ready(function() {
-    /**
-     * Event handlers
-     */
-    $('#filterButton').click(function(e) {
-        e.preventDefault();
-        var oTable = $('#jobPostings').dataTable();
-        if (cbArray.length > 0) {
-            var a = cbArray.join();
-            oTable.fnFilter(
-                cbArray.join('|'),
-                null,
-                true,
-                false
-            );
-
-        } else {
-            jobPostings.clearFilter();
-        }
-    });
-
-    $('#date-range').change( function() {
-        $('#jobPostings').dataTable().fnDraw();
-    });
-
-    $('#isFiltered').click(function() {
-        jobPostings.clearFilter();
-    });
-    /**
-     * End event handlers
-     */
-} );
-
-
-
 /**
  * Job Posting
  */
 
 var jobPostings = function(){
+
+/**
+ * New process:
+ * 1. Display loading screen (underscore template)
+ * 2. done - Do handshake
+ * 3. done - Get job list
+ *     a. done - If successful proceed..
+ *     b. If error: display error message instead of loading screen
+ * 4. done - Populate Categories list (underscore template)
+ * 5. done - Populate Hiring Center dropdown (underscore template)
+ * 6. done - Render datatables
+ * 7. done - Hook up all the event handlers (data tables init call?)
+ *
+ */
+
+
+
     // private variables *******
     var settings = {
         urls: {},
-        emailFriend: false
+        emailFriend: false,
+        hideInPerson: true
     };
+    var jobsList, categories;
 
     var oTable, _,$;
 
@@ -75,6 +58,34 @@ var jobPostings = function(){
 
     var handshake = function() {
         $.getJSON( settings.urls.invokeNotificationServiceUrl);
+    };
+
+    var getJobs = function() {
+        var jqxhr = $.getJSON( settings.urls.getNotificationsUrl, function(data) {
+            jobList = data.feed;
+            categories = data.categories;
+        }).done(function() {
+            displayCategories();
+            populateHiringOffices();
+            initTable();
+        })
+        .fail(function() {
+            alert('Unable to retrieve the list of jobs');
+            // Place error template handling call here
+            //console.log( "error" );
+        });
+    };
+
+    var populateHiringOffices = function() {
+        // TODO: switch from IDs to a classes
+        var offices = _.uniq(_.pluck(jobList, 'source'));
+        var tmpl = _.template($("#tmpl_hiringCenters").html(), { offices: offices });
+        $('#hiringCenters').html(tmpl);
+    };
+    var displayCategories = function() {
+        // TODO: switch from IDs to a classes
+        var tmpl = _.template($("#tmpl_categories").html(), { categories: categories });
+        $('#filter-categories').html(tmpl);
     };
 
     var clearFilter = function() {
@@ -130,6 +141,10 @@ var jobPostings = function(){
         $('#jobDetailsModal').modal('toggle');
     };
 
+    var hideInPersonJobs = function() {
+        oTable.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
+    };
+
     var removeLoadingOverlay = function() {
         /**
          * Since the table is rendered, hide the loading overlay
@@ -179,7 +194,6 @@ var jobPostings = function(){
                 var colDate = Date.parse(aData[iStartDateCol]);
 
                 if ( colDate >= min ) {
-                    // console.log('show');
                     return true;
                 }
                 return false;
@@ -188,7 +202,7 @@ var jobPostings = function(){
         // End date Filter
 
         $.extend( true, $.fn.dataTable.defaults, {
-            "sDom": "<'row'<'col-md-6'><'col-md-6 text-right'l>r>t<'row'<'col-md-6'i><'col-md-6'p>>",
+            "sDom": "<'row'<'col-md-6 toggleCheckbox'><'col-md-6 text-right'l>t<'row'<'col-md-6'i><'col-md-6'p>>",
             "sPaginationType": "bootstrap",
             "oLanguage": {
                 "sLengthMenu": "Show _MENU_ entries"
@@ -361,9 +375,7 @@ var jobPostings = function(){
          * Default sort: Date (col 3), newest first
          */
         $('#jobPostings').dataTable( {
-            "bProcessing": true,
-            "sAjaxSource": settings.urls.getNotificationsUrl,
-            "sAjaxDataProp": "feed",
+            "aaData": jobList,
             "aaSorting": [[ 3, "desc" ]],
             "aoColumnDefs": [
                 {
@@ -442,12 +454,39 @@ var jobPostings = function(){
                 },
                 {
                     "aTargets": [ 6 ],
-                    "sWidth": "30%",
                     "mData": "attributes.category",
                     "bVisible": false
                 },
+                {
+                    "aTargets": [ 7 ],
+                    "mData": "source",
+                    "bVisible": false
+                }
             ],
             "fnInitComplete": function(oSettings, json) {
+                oTable = this;
+                //Filter Apply in person jobs
+                // Note: This works, but the checkbox needs to be added to reverse it.
+                if (settings.hideInPerson) {
+                    //this.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
+                    hideInPersonJobs();
+                }
+
+                $('#filterButton').click(function(e) {
+                    e.preventDefault();
+                    if (cbArray.length > 0) {
+                        var a = cbArray.join();
+                        oTable.fnFilter(
+                            cbArray.join('|'),
+                            6,
+                            true,
+                            false
+                        );
+                    } else {
+                        clearFilter();
+                    }
+                });
+
 
                 $('.searchControls :checkbox').change(function(e) {
                     if ($(this).is(':checked')) {
@@ -460,7 +499,7 @@ var jobPostings = function(){
                         var a = cbArray.join();
                         oTable.fnFilter(
                             cbArray.join('|'),
-                            null,
+                            6,
                             true,
                             false
                         );
@@ -474,7 +513,7 @@ var jobPostings = function(){
                 $('#searchTerms').keyup(function(e) {
                     // var oTable = $('#jobPostings').dataTable();
 
-                    oTable.fnFilter(this.value, 2);
+                    oTable.fnFilter(this.value, null, false, true);
                 });
 
                 $( "#jobPostings" ).delegate( "td.favorite a", "click", function(e) {
@@ -486,6 +525,15 @@ var jobPostings = function(){
                     e.preventDefault();
                     displayJob($(this).closest('tr')[0]);
                 });
+
+                $('#date-range').change( function() {
+                    oTable.fnDraw();
+                });
+
+                $('#hiringCenters').change( function() {
+                    oTable.fnFilter(this.value, 7);
+                });
+
 
                 $('.primary-nav').click(function(e) {
                     e.preventDefault();
@@ -509,6 +557,22 @@ var jobPostings = function(){
                     }
                 });
                 
+                // Create toggle in person jobs checkbox
+                var cbl = $('<label>');
+                var tcb = $('<input>', {
+                    type:"checkbox"
+                });
+                // cbl.html(tcb);
+                $('.toggleCheckbox').append(cbl.html(tcb).append('Show "apply in person" jobs'));
+
+                $( ".toggleCheckbox" ).delegate( ":checkbox", "change", function(e) {
+                    if (this.checked) {
+                        clearFilter();
+                    } else {
+                        hideInPersonJobs();
+                    }
+                });
+
                 removeLoadingOverlay();
             }
         } );
@@ -527,8 +591,7 @@ var jobPostings = function(){
             if (args) {
                 settings.urls = args;
                 handshake();
-                initTable();
-                oTable = $('#jobPostings').dataTable();
+                getJobs();
             }
         },
         clearFilter: function() {
