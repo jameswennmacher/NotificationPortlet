@@ -47,7 +47,8 @@ var jobPostings = function(){
     var settings = {
         urls: {},
         emailFriend: false,
-        hideInPerson: true
+        hideInPerson: true,
+        portletId: null
     };
     var jobsList, categories;
 
@@ -79,13 +80,13 @@ var jobPostings = function(){
     var populateHiringOffices = function() {
         // TODO: switch from IDs to a classes
         var offices = _.uniq(_.pluck(jobList, 'source'));
-        var tmpl = _.template($("#tmpl_hiringCenters").html(), { offices: offices });
-        $('#hiringCenters').html(tmpl);
+        var tmpl = _.template($('#' + settings.portletId + 'tmpl_hiringCenters').html(), { offices: offices });
+        $('#' + settings.portletId + ' .hiringCenters').html(tmpl);
     };
     var displayCategories = function() {
         // TODO: switch from IDs to a classes
-        var tmpl = _.template($("#tmpl_categories").html(), { categories: categories });
-        $('#filter-categories').html(tmpl);
+        var tmpl = _.template($('#' + settings.portletId + 'tmpl_categories').html(), { categories: categories });
+        $('#' + settings.portletId + ' .filter-categories').html(tmpl);
     };
 
     var clearFilter = function() {
@@ -117,28 +118,28 @@ var jobPostings = function(){
     };
 
     var populateTemplate = function(data) {
-        var tmpl = _.template($("#jobDescriptionModal").html(), data);
-        $('#jobDetailsModal').find('.modal-content').html(tmpl);
+        var tmpl = _.template($('#' + settings.portletId + 'tmpl_jobDescriptionModal').html(), data);
+        $('#' + settings.portletId + ' .jobDetailsModal').find('.modal-content').html(tmpl);
 
         toggleModal();
         /**
          * Modal Button Event handlers
          */
-        $('#emailFriendButton').on('click', function(e) {
-            $('#modal-overlay').show();
+        $('#' + settings.portletId + ' .emailFriendButton').on('click', function(e) {
+            $('#' + settings.portletId + ' .modal-overlay').show();
         });
-        $('#cancelEmailButton').on('click', function(e) {
-            $('#modal-overlay').hide();
+        $('#' + settings.portletId + ' .cancelEmailButton').on('click', function(e) {
+            $('#' + settings.portletId + ' .modal-overlay').hide();
         });
-        $('#sendEmailButton').on('click', function(e) {
-            $.post( "test.php", $('#emailFriendForm').serialize());
-            $('#modal-overlay').hide();
+        $('#' + settings.portletId + ' .sendEmailButton').on('click', function(e) {
+            $.post( "test.php", $('#' + settings.portletId + ' .emailFriendForm').serialize());
+            $('#' + settings.portletId + ' .modal-overlay').hide();
             toggleModal();
         });
     };
 
     var toggleModal = function() {
-        $('#jobDetailsModal').modal('toggle');
+        $('#' + settings.portletId + ' .jobDetailsModal').modal('toggle');
     };
 
     var hideInPersonJobs = function() {
@@ -182,7 +183,7 @@ var jobPostings = function(){
         $.fn.dataTableExt.afnFiltering.push(
             function( oSettings, aData, iDataIndex ) {
 
-                var min = document.getElementById('date-range').value;
+                var min = document.getElementById(settings.portletId + 'date-range').value;
                 if (min === '' ) {
                     return true;
                 }
@@ -374,7 +375,7 @@ var jobPostings = function(){
         /**
          * Default sort: Date (col 3), newest first
          */
-        $('#jobPostings').dataTable( {
+        $('#' + settings.portletId + 'jobPostings').dataTable( {
             "aaData": jobList,
             "aaSorting": [[ 3, "desc" ]],
             "aoColumnDefs": [
@@ -472,20 +473,20 @@ var jobPostings = function(){
                     hideInPersonJobs();
                 }
 
-                $('#filterButton').click(function(e) {
-                    e.preventDefault();
-                    if (cbArray.length > 0) {
-                        var a = cbArray.join();
-                        oTable.fnFilter(
-                            cbArray.join('|'),
-                            6,
-                            true,
-                            false
-                        );
-                    } else {
-                        clearFilter();
-                    }
-                });
+                // $('#filterButton').click(function(e) {
+                //     e.preventDefault();
+                //     if (cbArray.length > 0) {
+                //         var a = cbArray.join();
+                //         oTable.fnFilter(
+                //             cbArray.join('|'),
+                //             6,
+                //             true,
+                //             false
+                //         );
+                //     } else {
+                //         clearFilter();
+                //     }
+                // });
 
 
                 $('.searchControls :checkbox').change(function(e) {
@@ -510,13 +511,13 @@ var jobPostings = function(){
 
                 });
 
-                $('#searchTerms').keyup(function(e) {
-                    // var oTable = $('#jobPostings').dataTable();
+                $('#' + settings.portletId + 'searchTerms').keyup(function(e) {
+                    // var oTable = $('#' + settings.portletId + 'jobPostings').dataTable();
 
                     oTable.fnFilter(this.value, null, false, true);
                 });
 
-                $( "#jobPostings" ).delegate( "td.favorite a", "click", function(e) {
+                $('#' + settings.portletId + 'jobPostings' ).delegate( 'td.favorite a', 'click', function(e) {
                     e.preventDefault();
                     toggleFavorite(this);
                 });
@@ -526,11 +527,11 @@ var jobPostings = function(){
                     displayJob($(this).closest('tr')[0]);
                 });
 
-                $('#date-range').change( function() {
+                $('#' + settings.portletId + 'date-range').change( function() {
                     oTable.fnDraw();
                 });
 
-                $('#hiringCenters').change( function() {
+                $('#' + settings.portletId + 'hiringCenters').change( function() {
                     oTable.fnFilter(this.value, 7);
                 });
 
@@ -585,9 +586,10 @@ var jobPostings = function(){
 
     // public API *******
     return {
-        init: function (myjQuery, myUnderscore, args) {
+        init: function (myjQuery, myUnderscore, args, portletId) {
             _ = myUnderscore;
             $ = myjQuery;
+            settings.portletId = portletId;
             if (args) {
                 settings.urls = args;
                 handshake();
@@ -598,7 +600,7 @@ var jobPostings = function(){
             clearFilter();
         },
         getTable: function() {
-            return(oTable);
+            return oTable;
         }
     };
 }();
