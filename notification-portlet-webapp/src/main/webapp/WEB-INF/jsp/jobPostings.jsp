@@ -78,7 +78,7 @@
 </script>
 <script src='<c:url value="/scripts/job-postings.js"/>'></script>
 
-<div class="job-postings bootstrap-styles">
+<div class="job-postings bootstrap-styles" id="${n}">
     <div id="loading" class="container-fluid">
         <div id="floatingCirclesG">
             <div class="f_circleG" id="frotateG_01"></div>
@@ -125,12 +125,12 @@
                     <h3>Search</h3>
                     <form role="form">
                       <div class="form-group">
-                        <label for="searchTerms" class="sr-only">Search Terms:</label>
-                        <input type="text" class="form-control input-sm" id="searchTerms" placeholder="Enter keyword, Job Id, etc">
+                        <label for="${n}searchTerms" class="sr-only">Search Terms:</label>
+                        <input type="text" class="form-control input-sm searchTerms" id="${n}searchTerms" placeholder="Enter keyword, Job Id, etc">
                       </div>
                       <div class="form-group">
-                        <label for="searchDates" class="sr-only">Date Range:</label>
-                        <select class="form-control input-sm" id="date-range">
+                        <label for="${n}date-range" class="sr-only">Date Range:</label>
+                        <select class="form-control input-sm date-range" id="${n}date-range">
                             <option value="">Show All Dates</option>
                             <option value="${date:todayMinusDays(7, 'MM/dd/yyyy')}">Past Week</option>
                             <option value="${date:todayMinusMonths(1, 'MM/dd/yyyy')}">Past Month</option>
@@ -139,8 +139,8 @@
                         </select>
                       </div>
                       <div class="form-group">
-                        <label for="hiringCenters" class="sr-only">Hiring Center:</label>
-                        <select class="hiring-center form-control input-sm" id="hiringCenters">
+                        <label for="${n}hiringCenters" class="sr-only">Hiring Center:</label>
+                        <select class="hiring-center form-control input-sm hiringCenters" id="${n}hiringCenters">
                         </select>
                       </div>
                       <%--
@@ -155,7 +155,7 @@
                     <form role="form">
                         <div class="row">
                             <div class="col-md-12">
-                                <ul id="filter-categories"></ul>
+                                <ul class="filter-categories"></ul>
                             </div>
                         </div>
                         <%--
@@ -169,7 +169,7 @@
                 <div class="col-sm-12">
                     <%-- <label><input type="checkbox" id="toggle-checkbox"> Hide 'apply in person' jobs</label> --%>
                     <div class="table-responsive">
-                        <table class="jobs-table table table-striped table-bordered" id="jobPostings">
+                        <table class="jobs-table table table-striped table-bordered" id="${n}jobPostings">
                             <thead>
                                 <tr>
                                     <th></th>
@@ -197,7 +197,7 @@
         </div>
 
         <!-- Modal -->
-        <div class="modal fade job-details" id="jobDetailsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal fade job-details jobDetailsModal" id="${n}jobDetailsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-lg">
             <div class="modal-content">
             </div>
@@ -205,7 +205,7 @@
         </div>
     </div>
 </div> <!-- bootstrap-styles -->
-<script type="text/template" id="tmpl_hiringCenters">
+<script type="text/template" id="${n}tmpl_hiringCenters">
     <option value="" default>Show All Hiring Centers</div>
     {{
         for (i=0;i<offices.length;i++) {
@@ -217,14 +217,14 @@
     }}
     
 </script>
-<script type="text/template" id="tmpl_categories">
+<script type="text/template" id="${n}tmpl_categories">
     {{ for (i=0;i<categories.length;i++) { }}
         <li class="checkbox"><label><input type="checkbox" value="{{= categories[i] }}">{{= categories[i] }}</label></li>
     {{ } }}
 
 </script>
 
-<script type="text/template" id="jobDescriptionModal">
+<script type="text/template" id="${n}tmpl_jobDescriptionModal">
 {{ if (emailFriend) { }}
 <div id="modal-overlay">
     <div class="container-fluid">
@@ -234,8 +234,8 @@
             <input type="text" class="form-control input-sm" id="emailAddress" name="emailAddress" />
             <input type="hidden" name="jobId" value="{{= id }}">
           </div>
-          <button type="button" class="btn btn-default" id="cancelEmailButton">Cancel</button>
-          <button type="button" class="btn btn-primary" id="sendEmailButton">Send</button>
+          <button type="button" class="btn btn-default cancelEmailButton" id="${n}cancelEmailButton">Cancel</button>
+          <button type="button" class="btn btn-primary sendEmailButton" id="${n}sendEmailButton">Send</button>
         </form>
     </div>
 </div>
@@ -321,7 +321,7 @@
     <div class="row">
         <div class="col-sm-6 text-left">
         {{ if (emailFriend) { }}
-            <button type="button" class="btn btn-default" id="emailFriendButton">Email to Friend</button>
+            <button type="button" class="btn btn-default emailFriendButton" id="${n}emailFriendButton">Email to Friend</button>
         {{ } }}
         </div>
         <div class="col-sm-6">
@@ -361,6 +361,6 @@
     };
 
     $(document).ready(function() {
-        jobPostings.init(portlets.bootstrapjQuery, jp_, urls);
+        jobPostings.init(portlets.bootstrapjQuery, jp_, urls, '${n}');
     });
 </script>
