@@ -215,7 +215,7 @@
                     "title": "MTC On-call Bus Driver",
                     "source": "Hiring site 3",
                     "attributes": {
-                        "postDate": [ "1/31/2014" ],
+                        "postDate": [ "4/16/2014" ],
                         "department": [ "MTC Operations" ],
                         "dateClosed": [ "10/31/2014" ],
                         "location": [ "SE - MTC" ],
@@ -227,6 +227,27 @@
                         "instructions": [ "If you qualify, click the Apply button to fill out an application" ],
                         "status": [ "Open" ],
                         "openings": [ "6" ]
+                    }
+                },
+                {
+                    "url": "http://peoplesoft.univ/jobApplication/33952",
+                    "linkText": "View job details",
+                    "id": "33952",
+                    "title": "MTC On-call Bus Driver",
+                    "source": "Hiring site 3",
+                    "attributes": {
+                        "postDate": [ "10/16/2013" ],
+                        "department": [ "MTC Operations" ],
+                        "dateClosed": [ "10/31/2014" ],
+                        "location": [ "SE - MTC" ],
+                        "startDate": [ "12/15/2014" ],
+                        "shift": [ "9AM, up to 20 hrs/wk" ],
+                        "hourlyWage": [ "TBD" ],
+                        "description": [ "This job requires you are exceptionally responsible, a good driver, and have had no accidents within the past 2 years.  In addition individuals who are able and desire early mornings can apply." ],
+                        "qualifications": [ "We appreciate your interest in inquiring about this position. The position is very safety-oriented and requires a lot of training, maintaining a license, and adhering to all federal and state traffic and commercial-driver safety regulations at all times." ],
+                        "instructions": [ "If you qualify, click the Apply button to fill out an application" ],
+                        "status": [ "Open" ],
+                        "openings": [ "1" ]
                     }
                 }
             ]

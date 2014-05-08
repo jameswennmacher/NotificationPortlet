@@ -112,8 +112,8 @@
                 <li><a href="" data-action="saved" id="navSaved">Saved Jobs</a></li>
               </ul>
               <ul class="nav navbar-nav navbar-right secondary-nav">
-                <li><a href="peoplesoft.univ/saved-searches" target="_blank">Saved Searches</a></li>
-                <li><a href="peoplesoft.univ/career-tools" target="_blank">Career Tools</a></li>
+                <li><a href="${portletPreferencesValues['notifications-external-saved-searches-url'][0]}" target="_blank">Saved Searches</a></li>
+                <li><a href="${portletPreferencesValues['notification-career-tools-url'][0]}" target="_blank">Career Tools</a></li>
               </ul>
             </div><!-- /.navbar-collapse -->
           </div><!-- /.container-fluid -->
