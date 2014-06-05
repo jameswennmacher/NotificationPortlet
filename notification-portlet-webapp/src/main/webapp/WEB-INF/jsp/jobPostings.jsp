@@ -164,6 +164,13 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Error output -->
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="alert alert-danger text-center h4" id="errorOutput" style="display:none;"></div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-sm-12">
