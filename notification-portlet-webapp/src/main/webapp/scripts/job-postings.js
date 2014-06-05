@@ -85,13 +85,17 @@ var jobPostings = function(){
     };
 
     var populateHiringOffices = function() {
-        // TODO: switch from IDs to a classes
         var offices = _.uniq(_.pluck(jobList, 'source'));
+        var sortingOffices = [];
+        for (var i = 0; i < offices.length; i++) {
+            sortingOffices.push(offices[i]);
+            sortingOffices.sort();
+        }
+        offices = sortingOffices;
         var tmpl = _.template($('#' + settings.portletId + 'tmpl_hiringCenters').html(), { offices: offices });
         $('#' + settings.portletId + ' .hiringCenters').html(tmpl);
     };
     var displayCategories = function() {
-        // TODO: switch from IDs to a classes
         var tmpl = _.template($('#' + settings.portletId + 'tmpl_categories').html(), { categories: categories });
         $('#' + settings.portletId + ' .filter-categories').html(tmpl);
     };
