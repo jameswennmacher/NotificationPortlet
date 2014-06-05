@@ -51,6 +51,7 @@ var jobPostings = function(){
         portletId: null
     };
     var jobsList, categories;
+    var jsonErrors = [];
 
     var oTable, _,$;
 
@@ -62,10 +63,16 @@ var jobPostings = function(){
     };
 
     var getJobs = function() {
-        var jqxhr = $.getJSON( settings.urls.getNotificationsUrl, function(data) {
-            jobList = data.feed;
+        var jqxhr = $.getJSON(settings.urls.getNotificationsUrl, function(data) {
             categories = data.categories;
+            jobList = data.feed;
+            // CODE REVIEW: Adding data.errors JSON
+            jsonErrors = data.errors;
         }).done(function() {
+            // CODE REVIEW: If the JSON returns any errors, run returnError method
+            if(jsonErrors.length > 0) {
+                returnError(jsonErrors);
+            }
             displayCategories();
             populateHiringOffices();
             initTable();
@@ -73,7 +80,7 @@ var jobPostings = function(){
         .fail(function() {
             alert('Unable to retrieve the list of jobs');
             // Place error template handling call here
-            //console.log( "error" );
+            //console.log("error");
         });
     };
 
@@ -108,7 +115,7 @@ var jobPostings = function(){
           star.toggleClass('fa-star-o fa-star');
         })
         .fail(function() {
-            //console.log( "error" );
+            //console.log("error");
         });
 
         var aPos = oTable.fnGetPosition( el.parentNode );
@@ -146,6 +153,32 @@ var jobPostings = function(){
         oTable.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
     };
 
+    // CODE REVIEW: Pass JSON error object into method
+    var returnError = function(errObj) {
+        // CODE REVIEW: Create empty arrays
+        var errObjKeys = [];
+        var errObjMsg = [];
+        // CODE REVIEW: Create the result to be returned
+        var errResult = "Error returning JSON file from data source ";
+        // CODE REVIEW: For every object found in JSON object, add the
+        // key and message in an array
+        for (var i = 0; i < errObj.length; i++) {
+            Object.keys(errObj[i]).forEach(function(key) {
+                errObjKeys.push(key);
+                errObjMsg.push(errObj[i][key]);
+            });
+
+            // CODE REVIEW: For each key, add the key and message to the
+            // returning text result
+            for (k = 0; k < errObjKeys.length; k++) {
+                errResult += "| " + errObjKeys[k] + ": " + errObjMsg[k];
+            }
+        }
+
+        errResult += "<br />Contact your administrator for help."
+        $('#errorOutput').show().html(errResult);
+    }
+
     var removeLoadingOverlay = function() {
         /**
          * Since the table is rendered, hide the loading overlay
@@ -157,10 +190,10 @@ var jobPostings = function(){
     };
 
     var initTable = function() {
-        $.fn.dataTableExt.oApi.fnGetHiddenNodes = function ( oSettings )
+        $.fn.dataTableExt.oApi.fnGetHiddenNodes = function (oSettings)
         {
             /* Note the use of a DataTables 'private' function thought the 'oApi' object */
-            var anNodes = this.oApi._fnGetTrNodes( oSettings );
+            var anNodes = this.oApi._fnGetTrNodes(oSettings);
             var anDisplay = $('tbody tr', oSettings.nTable);
               
             /* Remove nodes which are being displayed */
@@ -181,7 +214,7 @@ var jobPostings = function(){
          * Date Filter
          */
         $.fn.dataTableExt.afnFiltering.push(
-            function( oSettings, aData, iDataIndex ) {
+            function(oSettings, aData, iDataIndex) {
 
                 var min = document.getElementById(settings.portletId + 'date-range').value;
                 if (min === '' ) {
@@ -215,18 +248,17 @@ var jobPostings = function(){
             "sWrapper": "dataTables_wrapper form-inline"
         } );
 
-        $.fn.dataTableExt.oApi.fnFilterClear  = function ( oSettings )
-        {
+        $.fn.dataTableExt.oApi.fnFilterClear  = function(oSettings) {
             /* Remove global filter */
             oSettings.oPreviousSearch.sSearch = "";
               
             /* Remove the text of the global filter in the input boxes */
-            if ( typeof oSettings.aanFeatures.f != 'undefined' )
+            if (typeof oSettings.aanFeatures.f != 'undefined')
             {
                 var n = oSettings.aanFeatures.f;
-                for ( var i=0, iLen=n.length ; i<iLen ; i++ )
+                for (var i=0, iLen=n.length ; i<iLen ; i++)
                 {
-                    $('input', n[i]).val( '' );
+                    $('input', n[i]).val('');
                 }
             }
               
@@ -239,11 +271,11 @@ var jobPostings = function(){
             }
               
             /* Redraw */
-            oSettings.oApi._fnReDraw( oSettings );
+            oSettings.oApi._fnReDraw(oSettings);
         };
 
         /* API method to get paging information */
-        $.fn.dataTableExt.oApi.fnPagingInfo = function ( oSettings )
+        $.fn.dataTableExt.oApi.fnPagingInfo = function (oSettings)
         {
             return {
                 "iStart":         oSettings._iDisplayStart,
@@ -252,9 +284,9 @@ var jobPostings = function(){
                 "iTotal":         oSettings.fnRecordsTotal(),
                 "iFilteredTotal": oSettings.fnRecordsDisplay(),
                 "iPage":          oSettings._iDisplayLength === -1 ?
-                    0 : Math.ceil( oSettings._iDisplayStart / oSettings._iDisplayLength ),
+                    0 : Math.ceil(oSettings._iDisplayStart / oSettings._iDisplayLength),
                 "iTotalPages":    oSettings._iDisplayLength === -1 ?
-                    0 : Math.ceil( oSettings.fnRecordsDisplay() / oSettings._iDisplayLength )
+                    0 : Math.ceil(oSettings.fnRecordsDisplay() / oSettings._iDisplayLength)
             };
         };
         /* Bootstrap style pagination control */
@@ -264,8 +296,8 @@ var jobPostings = function(){
                     var oLang = oSettings.oLanguage.oPaginate;
                     var fnClickHandler = function ( e ) {
                         e.preventDefault();
-                        if ( oSettings.oApi._fnPageChange(oSettings, e.data.action) ) {
-                            fnDraw( oSettings );
+                        if (oSettings.oApi._fnPageChange(oSettings, e.data.action)) {
+                            fnDraw(oSettings);
                         }
                     };
 
@@ -280,7 +312,7 @@ var jobPostings = function(){
                     $(els[1]).bind( 'click.DT', { action: "next" }, fnClickHandler );
                 },
 
-                "fnUpdate": function ( oSettings, fnDraw ) {
+                "fnUpdate": function (oSettings, fnDraw) {
                     var iListLength = 5;
                     var oPaging = oSettings.oInstance.fnPagingInfo();
                     var an = oSettings.aanFeatures.p;
@@ -313,7 +345,7 @@ var jobPostings = function(){
                                 .bind('click', function (e) {
                                     e.preventDefault();
                                     oSettings._iDisplayStart = (parseInt($('a', this).text(),10)-1) * oPaging.iLength;
-                                    fnDraw( oSettings );
+                                    fnDraw(oSettings);
                                 } );
                         }
 
@@ -339,7 +371,7 @@ var jobPostings = function(){
          * TableTools Bootstrap compatibility
          * Required TableTools 2.1+
          */
-        if ( $.fn.DataTable.TableTools ) {
+        if ($.fn.DataTable.TableTools) {
             // Set the classes that TableTools uses to something suitable for Bootstrap
             $.extend( true, $.fn.DataTable.TableTools.classes, {
                 "container": "DTTT btn-group",
@@ -424,6 +456,7 @@ var jobPostings = function(){
                     "aTargets": [ 2 ],
                     "sWidth": "30%",
                     "mData": "title",
+                    "sClass": 'jobTitle',
                     "mRender": function( data, type, full ) {
                         return '<a href="' + full.id + '" title="' + full.linkText + '" class="jobDetailsLink" >' + data + '</a>';
                     }
@@ -469,25 +502,8 @@ var jobPostings = function(){
                 //Filter Apply in person jobs
                 // Note: This works, but the checkbox needs to be added to reverse it.
                 if (settings.hideInPerson) {
-                    //this.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
                     hideInPersonJobs();
                 }
-
-                // $('#filterButton').click(function(e) {
-                //     e.preventDefault();
-                //     if (cbArray.length > 0) {
-                //         var a = cbArray.join();
-                //         oTable.fnFilter(
-                //             cbArray.join('|'),
-                //             6,
-                //             true,
-                //             false
-                //         );
-                //     } else {
-                //         clearFilter();
-                //     }
-                // });
-
 
                 $('.searchControls :checkbox').change(function(e) {
                     if ($(this).is(':checked')) {
@@ -504,16 +520,17 @@ var jobPostings = function(){
                             true,
                             false
                         );
-
+                    // CODE REVIEW: For filtering issue, no check was being done on the 
+                    // length of the array. By adding a check for an empty array, the 
+                    // filtering corrects itself
+                    } else if (cbArray.length === 0) {
+                        clearFilter();
                     } else {
                         clearFilter();
                     }
-
                 });
 
                 $('#' + settings.portletId + 'searchTerms').keyup(function(e) {
-                    // var oTable = $('#' + settings.portletId + 'jobPostings').dataTable();
-
                     oTable.fnFilter(this.value, null, false, true);
                 });
 
@@ -522,7 +539,8 @@ var jobPostings = function(){
                     toggleFavorite(this);
                 });
 
-                $('.jobDetailsLink').click(function(e) {
+                $('#' + settings.portletId + 'jobPostings' ).delegate( 'td.jobTitle a', 'click', function(e) {
+                //$('.jobDetailsLink').click(function(e) {
                     e.preventDefault();
                     displayJob($(this).closest('tr')[0]);
                 });
@@ -535,14 +553,13 @@ var jobPostings = function(){
                     oTable.fnFilter(this.value, 7);
                 });
 
-
                 $('.primary-nav').click(function(e) {
                     e.preventDefault();
                     var action = e.target.getAttribute("data-action");
                     var el = $(e.target);
                     // Remove active class from all elements
                     $('.primary-nav').children().removeClass('active');
-                    // Apply acative class to selected element
+                    // Apply active class to selected element
                     el.parent().addClass('active');
 
                     switch (action) {

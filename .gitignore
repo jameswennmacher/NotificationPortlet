@@ -2,3 +2,7 @@
 /.project
 /.classpath
 target/
+node_modules
+.idea
+notificationsPortlet.sublime-project
+notificationsPortlet.sublime-workspace
