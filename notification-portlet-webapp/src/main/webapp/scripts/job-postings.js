@@ -538,7 +538,7 @@ var jobPostings = function(){
                     }
                 });
 
-                $('#inPersonCb').delegate('change', function() {
+                $('.toggleCheckbox').on('change', '#inPersonCb', function() {
                     inPersonJobsCheck();
                 });
 
