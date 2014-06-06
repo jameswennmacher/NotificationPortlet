@@ -47,7 +47,6 @@ var jobPostings = function(){
     var settings = {
         urls: {},
         emailFriend: false,
-        hideInPerson: true,
         portletId: null
     };
     var jobsList, categories;
@@ -66,10 +65,8 @@ var jobPostings = function(){
         var jqxhr = $.getJSON(settings.urls.getNotificationsUrl, function(data) {
             categories = data.categories;
             jobList = data.feed;
-            // CODE REVIEW: Adding data.errors JSON
             jsonErrors = data.errors;
         }).done(function() {
-            // CODE REVIEW: If the JSON returns any errors, run returnError method
             if(jsonErrors.length > 0) {
                 returnError(jsonErrors);
             }
@@ -153,27 +150,41 @@ var jobPostings = function(){
         $('#' + settings.portletId + ' .jobDetailsModal').modal('toggle');
     };
 
-    var hideInPersonJobs = function() {
-        oTable.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
-    };
+    var inPersonJobsCheck = function() {
+        if ($('#inPersonCb').is(':checked')) {
+            displayInPersonJobs(true);
+        } else {
+            displayInPersonJobs(false);
+        }
+    }
 
-    // CODE REVIEW: Pass JSON error object into method
+    var displayInPersonJobs = function(inPersonBool) {
+        if(inPersonBool === true) {
+            oTable.fnFilter('', 0);
+        } else {
+            oTable.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
+        }
+    }
+
+    var displaySavedJobs = function(savedJobsBool) {
+        if (savedJobsBool === true) {
+            oTable.fnFilter('true', 1);
+        } else {
+            oTable.fnFilter('', 1);
+        }
+    }
+
     var returnError = function(errObj) {
-        // CODE REVIEW: Create empty arrays
         var errObjKeys = [];
-        var errObjMsg = [];
-        // CODE REVIEW: Create the result to be returned
         var errResult = "Error returning JSON file from data source ";
-        // CODE REVIEW: For every object found in JSON object, add the
-        // key and message in an array
-        for (var i = 0; i < errObj.length; i++) {
-            Object.keys(errObj[i]).forEach(function(key) {
-                errObjKeys.push(key);
-                errObjMsg.push(errObj[i][key]);
-            });
 
-            // CODE REVIEW: For each key, add the key and message to the
-            // returning text result
+        for (var i = 0; i < errObj.length; i++) {
+            var errObjKey = errObj[i];
+
+            Object.keys(errObjKey).forEach(function(key) {
+                errObjKeys.push(key);
+                errObjMsg.push(errObjKey[key]);
+            });
             for (k = 0; k < errObjKeys.length; k++) {
                 errResult += "| " + errObjKeys[k] + ": " + errObjMsg[k];
             }
@@ -503,11 +514,6 @@ var jobPostings = function(){
             ],
             "fnInitComplete": function(oSettings, json) {
                 oTable = this;
-                //Filter Apply in person jobs
-                // Note: This works, but the checkbox needs to be added to reverse it.
-                if (settings.hideInPerson) {
-                    hideInPersonJobs();
-                }
 
                 $('.searchControls :checkbox').change(function(e) {
                     if ($(this).is(':checked')) {
@@ -524,14 +530,19 @@ var jobPostings = function(){
                             true,
                             false
                         );
-                    // CODE REVIEW: For filtering issue, no check was being done on the 
-                    // length of the array. By adding a check for an empty array, the 
-                    // filtering corrects itself
                     } else if (cbArray.length === 0) {
                         clearFilter();
                     } else {
                         clearFilter();
                     }
+                });
+
+                $('#inPersonCb').delegate('change', function() {
+                    inPersonJobsCheck();
+                });
+
+                $('#navSearch').click(function() {
+                    inPersonJobsCheck();
                 });
 
                 $('#' + settings.portletId + 'searchTerms').keyup(function(e) {
@@ -558,6 +569,8 @@ var jobPostings = function(){
                 });
 
                 $('.primary-nav').click(function(e) {
+                    inPersonJobsCheck();
+
                     e.preventDefault();
                     var action = e.target.getAttribute("data-action");
                     var el = $(e.target);
@@ -568,13 +581,14 @@ var jobPostings = function(){
 
                     switch (action) {
                         case 'search':
-                            clearFilter();
+                            inPersonJobsCheck();
                             break;
                         case 'saved':
-                            oTable.fnFilter('true', 1);
+                            displaySavedJobs(true);
                             break;
                         default:
-                            clearFilter();
+                            inPersonJobsCheck();
+                            displaySavedJobs(false);
                             break;
                     }
                 });
@@ -582,18 +596,13 @@ var jobPostings = function(){
                 // Create toggle in person jobs checkbox
                 var cbl = $('<label>');
                 var tcb = $('<input>', {
-                    type:"checkbox"
+                    type:"checkbox",
+                    id:"inPersonCb",
+                    checked:true
                 });
                 // cbl.html(tcb);
                 $('.toggleCheckbox').append(cbl.html(tcb).append('Show "apply in person" jobs'));
-
-                $( ".toggleCheckbox" ).delegate( ":checkbox", "change", function(e) {
-                    if (this.checked) {
-                        clearFilter();
-                    } else {
-                        hideInPersonJobs();
-                    }
-                });
+                inPersonJobsCheck();
 
                 removeLoadingOverlay();
             }
