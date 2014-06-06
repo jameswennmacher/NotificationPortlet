@@ -176,6 +176,7 @@ var jobPostings = function(){
 
     var returnError = function(errObj) {
         var errObjKeys = [];
+        var errObjMsg = [];
         var errResult = "Error returning JSON file from data source ";
 
         for (var i = 0; i < errObj.length; i++) {
@@ -569,8 +570,6 @@ var jobPostings = function(){
                 });
 
                 $('.primary-nav').click(function(e) {
-                    inPersonJobsCheck();
-
                     e.preventDefault();
                     var action = e.target.getAttribute("data-action");
                     var el = $(e.target);
