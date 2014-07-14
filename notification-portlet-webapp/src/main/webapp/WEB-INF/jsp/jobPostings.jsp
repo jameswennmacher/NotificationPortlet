@@ -286,6 +286,7 @@
                         <h5>{{=attributes.status}}</h5>
                         <h5>Date Posted: {{=attributes.postDate}}</h5>
                         <h5>Job ID: {{=id}}</h5>
+                        <h5>Category: {{=attributes.category}}</h5>
                     </div>
                 </div>
                 <hr />
