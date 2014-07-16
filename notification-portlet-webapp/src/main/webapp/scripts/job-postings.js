@@ -49,13 +49,10 @@ var jobPostings = function(){
         emailFriend: false,
         portletId: null
     };
-    var jobsList, categories;
+    var categories;
     var jsonErrors = [];
 
     var oTable, _,$;
-
-    // private functions
-    var privateFunc = function() {};
 
     var handshake = function() {
         $.getJSON( settings.urls.invokeNotificationServiceUrl);
@@ -99,6 +96,9 @@ var jobPostings = function(){
 
     var clearFilter = function() {
         oTable.fnFilterClear();
+        populateHiringOffices();
+        displayCategories();
+
     };
 
     var displayJob = function(row) {
@@ -106,7 +106,6 @@ var jobPostings = function(){
         data.emailFriend = settings.emailFriend;
 
         populateTemplate(data);
-
     };
 
     var toggleFavorite = function(el) {
@@ -150,28 +149,8 @@ var jobPostings = function(){
         $('#' + settings.portletId + ' .jobDetailsModal').modal('toggle');
     };
 
-    var inPersonJobsCheck = function() {
-        if ($('#inPersonCb').is(':checked')) {
-            displayInPersonJobs(true);
-        } else {
-            displayInPersonJobs(false);
-        }
-    }
-
-    var displayInPersonJobs = function(inPersonBool) {
-        if(inPersonBool === true) {
-            oTable.fnFilter('', 0);
-        } else {
-            oTable.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
-        }
-    }
-
-    var displaySavedJobs = function(savedJobsBool) {
-        if (savedJobsBool === true) {
-            oTable.fnFilter('true', 1);
-        } else {
-            oTable.fnFilter('', 1);
-        }
+    var applyFilter = function(def, col) {
+        oTable.fnFilter(def, col, true, false);
     }
 
     var returnError = function(errObj) {
@@ -516,80 +495,69 @@ var jobPostings = function(){
             "fnInitComplete": function(oSettings, json) {
                 oTable = this;
 
+                // Apply filters
+                // Category filters
                 $('.searchControls :checkbox').change(function(e) {
+                    var cbDef;
                     if ($(this).is(':checked')) {
                         cbArray.push(this.value);
                     } else {
                         arrayPop(this.value, cbArray);
                     }
-
-                    if (cbArray.length > 0) {
-                        var a = cbArray.join();
-                        oTable.fnFilter(
-                            cbArray.join('|'),
-                            6,
-                            true,
-                            false
-                        );
-                    } else if (cbArray.length === 0) {
-                        clearFilter();
-                    } else {
-                        clearFilter();
-                    }
+                    cbDef = cbArray.join('|');
+                    applyFilter(cbDef, 6);
                 });
 
+                // In person filter
                 $('.toggleCheckbox').on('change', '#inPersonCb', function() {
-                    inPersonJobsCheck();
+                    var ipDef;
+                    if ($('#inPersonCb').is(':checked')) {
+                        ipDef = '';
+                    } else {
+                        ipDef = '^(?:(?!person).)*$\r?\n?';
+                    }
+                    applyFilter(ipDef, 0);
                 });
 
+                // Saved jobs filter
+                $('#navSaved').click(function() {
+                    applyFilter('true', 1);
+                });
+
+                // Remove saved jobs filter
                 $('#navSearch').click(function() {
-                    inPersonJobsCheck();
+                    applyFilter('', 1);
                 });
 
+                // Keyword textbox search filter
                 $('#' + settings.portletId + 'searchTerms').keyup(function(e) {
-                    oTable.fnFilter(this.value, null, false, true);
+                    applyFilter(this.value, null);
                 });
 
-                $('#' + settings.portletId + 'jobPostings' ).delegate( 'td.favorite a', 'click', function(e) {
-                    e.preventDefault();
-                    toggleFavorite(this);
-                });
-
-                $('#' + settings.portletId + 'jobPostings' ).delegate( 'td.jobTitle a', 'click', function(e) {
-                //$('.jobDetailsLink').click(function(e) {
-                    e.preventDefault();
-                    displayJob($(this).closest('tr')[0]);
-                });
-
+                // Date range dropdown filter
                 $('#' + settings.portletId + 'date-range').change( function() {
                     oTable.fnDraw();
                 });
 
+                // Hiring center dropdown filter
                 $('#' + settings.portletId + 'hiringCenters').change( function() {
-                    oTable.fnFilter(this.value, 7);
+                    applyFilter(this.value, 7);
                 });
 
+                $('#' + settings.portletId + 'jobPostings').delegate( 'td.favorite a', 'click', function(e) {
+                    e.preventDefault();
+                    toggleFavorite(this);
+                });
+                $('#' + settings.portletId + 'jobPostings').delegate( 'td.jobTitle a', 'click', function(e) {
+                    e.preventDefault();
+                    displayJob($(this).closest('tr')[0]);
+                });
+
+                // Toggle active tab colors
                 $('.primary-nav').click(function(e) {
                     e.preventDefault();
-                    var action = e.target.getAttribute("data-action");
-                    var el = $(e.target);
-                    // Remove active class from all elements
                     $('.primary-nav').children().removeClass('active');
-                    // Apply active class to selected element
-                    el.parent().addClass('active');
-
-                    switch (action) {
-                        case 'search':
-                            inPersonJobsCheck();
-                            break;
-                        case 'saved':
-                            displaySavedJobs(true);
-                            break;
-                        default:
-                            inPersonJobsCheck();
-                            displaySavedJobs(false);
-                            break;
-                    }
+                    $(e.target).parent().addClass('active');
                 });
                 
                 // Create toggle in person jobs checkbox
@@ -601,7 +569,6 @@ var jobPostings = function(){
                 });
                 // cbl.html(tcb);
                 $('.toggleCheckbox').append(cbl.html(tcb).append('Show "apply in person" jobs'));
-                inPersonJobsCheck();
 
                 removeLoadingOverlay();
             }
