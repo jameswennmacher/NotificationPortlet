@@ -490,6 +490,16 @@ var jobPostings = function(){
                     "aTargets": [ 7 ],
                     "mData": "source",
                     "bVisible": false
+                },
+                {
+                    "aTargets": [ 8 ],
+                    "mData": "attributes.description",
+                    "bVisible": false
+                },
+                {
+                    "aTargets": [ 9 ],
+                    "mData": "attributes.qualifications",
+                    "bVisible": false
                 }
             ],
             "fnInitComplete": function(oSettings, json) {
