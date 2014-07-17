@@ -154,23 +154,13 @@ var jobPostings = function(){
     }
 
     var returnError = function(errObj) {
-        var errObjKeys = [];
-        var errObjMsg = [];
-        var errResult = "Error returning JSON file from data source ";
+        var errResult = '';
 
         for (var i = 0; i < errObj.length; i++) {
             var errObjKey = errObj[i];
 
-            Object.keys(errObjKey).forEach(function(key) {
-                errObjKeys.push(key);
-                errObjMsg.push(errObjKey[key]);
-            });
-            for (k = 0; k < errObjKeys.length; k++) {
-                errResult += "| " + errObjKeys[k] + ": " + errObjMsg[k];
-            }
+            errResult += errObjKey.source + ": " + errObjKey.error + "<br/>";
         }
-
-        errResult += "<br />Contact your administrator for help."
         $('#errorOutput').show().html(errResult);
     }
 
