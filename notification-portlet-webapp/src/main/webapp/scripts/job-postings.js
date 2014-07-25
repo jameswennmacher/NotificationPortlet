@@ -47,25 +47,26 @@ var jobPostings = function(){
     var settings = {
         urls: {},
         emailFriend: false,
-        hideInPerson: true,
         portletId: null
     };
-    var jobsList, categories;
+    var categories;
+    var jsonErrors = [];
 
     var oTable, _,$;
-
-    // private functions
-    var privateFunc = function() {};
 
     var handshake = function() {
         $.getJSON( settings.urls.invokeNotificationServiceUrl);
     };
 
     var getJobs = function() {
-        var jqxhr = $.getJSON( settings.urls.getNotificationsUrl, function(data) {
-            jobList = data.feed;
+        var jqxhr = $.getJSON(settings.urls.getNotificationsUrl, function(data) {
             categories = data.categories;
+            jobList = data.feed;
+            jsonErrors = data.errors;
         }).done(function() {
+            if(jsonErrors.length > 0) {
+                returnError(jsonErrors);
+            }
             displayCategories();
             populateHiringOffices();
             initTable();
@@ -73,24 +74,31 @@ var jobPostings = function(){
         .fail(function() {
             alert('Unable to retrieve the list of jobs');
             // Place error template handling call here
-            //console.log( "error" );
+            //console.log("error");
         });
     };
 
     var populateHiringOffices = function() {
-        // TODO: switch from IDs to a classes
         var offices = _.uniq(_.pluck(jobList, 'source'));
+        var sortingOffices = [];
+        for (var i = 0; i < offices.length; i++) {
+            sortingOffices.push(offices[i]);
+            sortingOffices.sort();
+        }
+        offices = sortingOffices;
         var tmpl = _.template($('#' + settings.portletId + 'tmpl_hiringCenters').html(), { offices: offices });
         $('#' + settings.portletId + ' .hiringCenters').html(tmpl);
     };
     var displayCategories = function() {
-        // TODO: switch from IDs to a classes
         var tmpl = _.template($('#' + settings.portletId + 'tmpl_categories').html(), { categories: categories });
         $('#' + settings.portletId + ' .filter-categories').html(tmpl);
     };
 
     var clearFilter = function() {
         oTable.fnFilterClear();
+        populateHiringOffices();
+        displayCategories();
+
     };
 
     var displayJob = function(row) {
@@ -98,7 +106,6 @@ var jobPostings = function(){
         data.emailFriend = settings.emailFriend;
 
         populateTemplate(data);
-
     };
 
     var toggleFavorite = function(el) {
@@ -108,7 +115,7 @@ var jobPostings = function(){
           star.toggleClass('fa-star-o fa-star');
         })
         .fail(function() {
-            //console.log( "error" );
+            //console.log("error");
         });
 
         var aPos = oTable.fnGetPosition( el.parentNode );
@@ -142,9 +149,20 @@ var jobPostings = function(){
         $('#' + settings.portletId + ' .jobDetailsModal').modal('toggle');
     };
 
-    var hideInPersonJobs = function() {
-        oTable.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
-    };
+    var applyFilter = function(def, col) {
+        oTable.fnFilter(def, col, true, false);
+    }
+
+    var returnError = function(errObj) {
+        var errResult = '';
+
+        for (var i = 0; i < errObj.length; i++) {
+            var errObjKey = errObj[i];
+
+            errResult += errObjKey.source + ": " + errObjKey.error + "<br/>";
+        }
+        $('#errorOutput').show().html(errResult);
+    }
 
     var removeLoadingOverlay = function() {
         /**
@@ -157,10 +175,10 @@ var jobPostings = function(){
     };
 
     var initTable = function() {
-        $.fn.dataTableExt.oApi.fnGetHiddenNodes = function ( oSettings )
+        $.fn.dataTableExt.oApi.fnGetHiddenNodes = function (oSettings)
         {
             /* Note the use of a DataTables 'private' function thought the 'oApi' object */
-            var anNodes = this.oApi._fnGetTrNodes( oSettings );
+            var anNodes = this.oApi._fnGetTrNodes(oSettings);
             var anDisplay = $('tbody tr', oSettings.nTable);
               
             /* Remove nodes which are being displayed */
@@ -181,7 +199,7 @@ var jobPostings = function(){
          * Date Filter
          */
         $.fn.dataTableExt.afnFiltering.push(
-            function( oSettings, aData, iDataIndex ) {
+            function(oSettings, aData, iDataIndex) {
 
                 var min = document.getElementById(settings.portletId + 'date-range').value;
                 if (min === '' ) {
@@ -215,18 +233,17 @@ var jobPostings = function(){
             "sWrapper": "dataTables_wrapper form-inline"
         } );
 
-        $.fn.dataTableExt.oApi.fnFilterClear  = function ( oSettings )
-        {
+        $.fn.dataTableExt.oApi.fnFilterClear  = function(oSettings) {
             /* Remove global filter */
             oSettings.oPreviousSearch.sSearch = "";
               
             /* Remove the text of the global filter in the input boxes */
-            if ( typeof oSettings.aanFeatures.f != 'undefined' )
+            if (typeof oSettings.aanFeatures.f != 'undefined')
             {
                 var n = oSettings.aanFeatures.f;
-                for ( var i=0, iLen=n.length ; i<iLen ; i++ )
+                for (var i=0, iLen=n.length ; i<iLen ; i++)
                 {
-                    $('input', n[i]).val( '' );
+                    $('input', n[i]).val('');
                 }
             }
               
@@ -239,11 +256,11 @@ var jobPostings = function(){
             }
               
             /* Redraw */
-            oSettings.oApi._fnReDraw( oSettings );
+            oSettings.oApi._fnReDraw(oSettings);
         };
 
         /* API method to get paging information */
-        $.fn.dataTableExt.oApi.fnPagingInfo = function ( oSettings )
+        $.fn.dataTableExt.oApi.fnPagingInfo = function (oSettings)
         {
             return {
                 "iStart":         oSettings._iDisplayStart,
@@ -252,9 +269,9 @@ var jobPostings = function(){
                 "iTotal":         oSettings.fnRecordsTotal(),
                 "iFilteredTotal": oSettings.fnRecordsDisplay(),
                 "iPage":          oSettings._iDisplayLength === -1 ?
-                    0 : Math.ceil( oSettings._iDisplayStart / oSettings._iDisplayLength ),
+                    0 : Math.ceil(oSettings._iDisplayStart / oSettings._iDisplayLength),
                 "iTotalPages":    oSettings._iDisplayLength === -1 ?
-                    0 : Math.ceil( oSettings.fnRecordsDisplay() / oSettings._iDisplayLength )
+                    0 : Math.ceil(oSettings.fnRecordsDisplay() / oSettings._iDisplayLength)
             };
         };
         /* Bootstrap style pagination control */
@@ -264,8 +281,8 @@ var jobPostings = function(){
                     var oLang = oSettings.oLanguage.oPaginate;
                     var fnClickHandler = function ( e ) {
                         e.preventDefault();
-                        if ( oSettings.oApi._fnPageChange(oSettings, e.data.action) ) {
-                            fnDraw( oSettings );
+                        if (oSettings.oApi._fnPageChange(oSettings, e.data.action)) {
+                            fnDraw(oSettings);
                         }
                     };
 
@@ -280,7 +297,7 @@ var jobPostings = function(){
                     $(els[1]).bind( 'click.DT', { action: "next" }, fnClickHandler );
                 },
 
-                "fnUpdate": function ( oSettings, fnDraw ) {
+                "fnUpdate": function (oSettings, fnDraw) {
                     var iListLength = 5;
                     var oPaging = oSettings.oInstance.fnPagingInfo();
                     var an = oSettings.aanFeatures.p;
@@ -313,7 +330,7 @@ var jobPostings = function(){
                                 .bind('click', function (e) {
                                     e.preventDefault();
                                     oSettings._iDisplayStart = (parseInt($('a', this).text(),10)-1) * oPaging.iLength;
-                                    fnDraw( oSettings );
+                                    fnDraw(oSettings);
                                 } );
                         }
 
@@ -339,7 +356,7 @@ var jobPostings = function(){
          * TableTools Bootstrap compatibility
          * Required TableTools 2.1+
          */
-        if ( $.fn.DataTable.TableTools ) {
+        if ($.fn.DataTable.TableTools) {
             // Set the classes that TableTools uses to something suitable for Bootstrap
             $.extend( true, $.fn.DataTable.TableTools.classes, {
                 "container": "DTTT btn-group",
@@ -424,6 +441,7 @@ var jobPostings = function(){
                     "aTargets": [ 2 ],
                     "sWidth": "30%",
                     "mData": "title",
+                    "sClass": 'jobTitle',
                     "mRender": function( data, type, full ) {
                         return '<a href="' + full.id + '" title="' + full.linkText + '" class="jobDetailsLink" >' + data + '</a>';
                     }
@@ -462,117 +480,95 @@ var jobPostings = function(){
                     "aTargets": [ 7 ],
                     "mData": "source",
                     "bVisible": false
+                },
+                {
+                    "aTargets": [ 8 ],
+                    "mData": "attributes.description",
+                    "bVisible": false
+                },
+                {
+                    "aTargets": [ 9 ],
+                    "mData": "attributes.qualifications",
+                    "bVisible": false
                 }
             ],
             "fnInitComplete": function(oSettings, json) {
                 oTable = this;
-                //Filter Apply in person jobs
-                // Note: This works, but the checkbox needs to be added to reverse it.
-                if (settings.hideInPerson) {
-                    //this.fnFilter( '^(?:(?!person).)*$\r?\n?', 0, true, false);
-                    hideInPersonJobs();
-                }
 
-                // $('#filterButton').click(function(e) {
-                //     e.preventDefault();
-                //     if (cbArray.length > 0) {
-                //         var a = cbArray.join();
-                //         oTable.fnFilter(
-                //             cbArray.join('|'),
-                //             6,
-                //             true,
-                //             false
-                //         );
-                //     } else {
-                //         clearFilter();
-                //     }
-                // });
-
-
+                // Apply filters
+                // Category filters
                 $('.searchControls :checkbox').change(function(e) {
+                    var cbDef;
                     if ($(this).is(':checked')) {
                         cbArray.push(this.value);
                     } else {
                         arrayPop(this.value, cbArray);
                     }
+                    cbDef = cbArray.join('|');
+                    applyFilter(cbDef, 6);
+                });
 
-                    if (cbArray.length > 0) {
-                        var a = cbArray.join();
-                        oTable.fnFilter(
-                            cbArray.join('|'),
-                            6,
-                            true,
-                            false
-                        );
-
+                // In person filter
+                $('.toggleCheckbox').on('change', '#inPersonCb', function() {
+                    var ipDef;
+                    if ($('#inPersonCb').is(':checked')) {
+                        ipDef = '';
                     } else {
-                        clearFilter();
+                        ipDef = '^(?:(?!person).)*$\r?\n?';
                     }
-
+                    applyFilter(ipDef, 0);
                 });
 
+                // Saved jobs filter
+                $('#navSaved').click(function() {
+                    applyFilter('true', 1);
+                });
+
+                // Remove saved jobs filter
+                $('#navSearch').click(function() {
+                    applyFilter('', 1);
+                });
+
+                // Keyword textbox search filter
                 $('#' + settings.portletId + 'searchTerms').keyup(function(e) {
-                    // var oTable = $('#' + settings.portletId + 'jobPostings').dataTable();
-
-                    oTable.fnFilter(this.value, null, false, true);
+                    applyFilter(this.value, null);
                 });
 
-                $('#' + settings.portletId + 'jobPostings' ).delegate( 'td.favorite a', 'click', function(e) {
-                    e.preventDefault();
-                    toggleFavorite(this);
-                });
-
-                $('.jobDetailsLink').click(function(e) {
-                    e.preventDefault();
-                    displayJob($(this).closest('tr')[0]);
-                });
-
+                // Date range dropdown filter
                 $('#' + settings.portletId + 'date-range').change( function() {
                     oTable.fnDraw();
                 });
 
+                // Hiring center dropdown filter
                 $('#' + settings.portletId + 'hiringCenters').change( function() {
-                    oTable.fnFilter(this.value, 7);
+                    applyFilter(this.value, 7);
                 });
 
+                $('#' + settings.portletId + 'jobPostings').delegate( 'td.favorite a', 'click', function(e) {
+                    e.preventDefault();
+                    toggleFavorite(this);
+                });
+                $('#' + settings.portletId + 'jobPostings').delegate( 'td.jobTitle a', 'click', function(e) {
+                    e.preventDefault();
+                    displayJob($(this).closest('tr')[0]);
+                });
 
+                // Toggle active tab colors
                 $('.primary-nav').click(function(e) {
                     e.preventDefault();
-                    var action = e.target.getAttribute("data-action");
-                    var el = $(e.target);
-                    // Remove active class from all elements
                     $('.primary-nav').children().removeClass('active');
-                    // Apply acative class to selected element
-                    el.parent().addClass('active');
-
-                    switch (action) {
-                        case 'search':
-                            clearFilter();
-                            break;
-                        case 'saved':
-                            oTable.fnFilter('true', 1);
-                            break;
-                        default:
-                            clearFilter();
-                            break;
-                    }
+                    $(e.target).parent().addClass('active');
                 });
                 
                 // Create toggle in person jobs checkbox
                 var cbl = $('<label>');
                 var tcb = $('<input>', {
-                    type:"checkbox"
+                    type:"checkbox",
+                    id:"inPersonCb",
+                    checked:true
                 });
                 // cbl.html(tcb);
                 $('.toggleCheckbox').append(cbl.html(tcb).append('Show "apply in person" jobs'));
-
-                $( ".toggleCheckbox" ).delegate( ":checkbox", "change", function(e) {
-                    if (this.checked) {
-                        clearFilter();
-                    } else {
-                        hideInPersonJobs();
-                    }
-                });
 
                 removeLoadingOverlay();
             }

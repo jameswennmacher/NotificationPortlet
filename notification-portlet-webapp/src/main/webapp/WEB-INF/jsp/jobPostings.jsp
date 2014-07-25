@@ -164,6 +164,13 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Error output -->
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="alert alert-danger text-center h5" id="errorOutput" style="display:none;"></div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-sm-12">
@@ -279,6 +286,7 @@
                         <h5>{{=attributes.status}}</h5>
                         <h5>Date Posted: {{=attributes.postDate}}</h5>
                         <h5>Job ID: {{=id}}</h5>
+                        <h5>Category: {{=attributes.category}}</h5>
                     </div>
                 </div>
                 <hr />
