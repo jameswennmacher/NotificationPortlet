@@ -368,7 +368,7 @@
       escape      : /\{\{-([\s\S]+?)\}\}/g
     };
 
-    $(document).ready(function() {
+    portlets.bootstrapjQuery(document).ready(function() {
         jobPostings.init(portlets.bootstrapjQuery, jp_, urls, '${n}');
     });
 </script>
